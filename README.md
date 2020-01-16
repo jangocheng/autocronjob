@@ -1,8 +1,6 @@
 # autocronjob
 # 欢迎大家随时提bug
 
-# autocronjob
-[TOC]
 ### 依赖
 
 ```
