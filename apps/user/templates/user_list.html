@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'plugins/bootstrap-select/css/bootstrap-select.css' %} ">
+<link rel="stylesheet" href="{% static 'plugins/json-forms/css/brutusin-json-forms.css' %} ">
+<!-- DataTables css -->
+<link rel="stylesheet" href="{% static '/plugins/datatables/dataTables.bootstrap.css' %}">
+<link rel="stylesheet" href="{% static "plugins/json-view/jquery.jsonview.min.css" %}">
+{% endblock %}
+{% block content %}
+<div class="col-sm-2">
+    <div class="form-group">
+        <a class="btn btn-success" onclick="window.location.href = '{% url 'user_add' %}'">添加 <i class="fa fa-plus"></i></a>
+    </div>
+</div>
+<div class="col-xs-12">
+  <div class="box">
+    <div class="box-body">
+      <table id="userlist" class="table table-bordered table-striped">
+        <thead>
+        <tr>
+          <th>UserName</th>
+          <th>Name</th>
+          <th>E-mail</th>
+          <th>Status</th>
+          <th>Role</th>
+          <th>Last Login</th>
+          <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for user in user_info %}
+        <tr>
+          <td>{{ user.username }}</td>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+              {% ifequal user.is_active 1 %}
+                  <span class="label label-success">启用</span>
+              {% else %}
+                  <span class="label label-default">禁用</span>
+              {% endifequal %}
+          </td>
+          <td>
+              {% ifequal user.is_superuser 1 %}
+                管理员
+              {% else %}
+                普通用户
+              {% endifequal %}
+          </td>
+          <td>{{ user.last_login|date:"Y-m-d H:i:s"|default:'-' }}</td>
+          <td class="text-center pull-left">
+              <a class="btn btn-xs btn-info" onclick="return user_edit('{{ user.id }}', '{{ user.username }}')">更新用户信息</a>
+              <a class="btn btn-xs btn-danger" onclick="return user_del('{{ user.id }}', '{{ user.username }}')">删除</a>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+  </div>
+  <!-- /.box -->
+</div>
+<!-- /.col -->
+{% endblock %}
+{% block js %}
+<script>
+  $('#page_header').text('用户管理');
+  $('#page_header_descript').text('用户列表');
+</script>
+<script src="{% static 'plugins/markdown/markdown.js' %} "></script>
+<script src="{% static 'plugins/bootstrap-select/js/bootstrap-select.js' %} "></script>
+<script src="{% static 'plugins/json-forms/js/brutusin-json-forms.js' %} "></script>
+<script src="{% static 'plugins/json-forms/js/brutusin-json-forms-bootstrap.js' %} "></script>
+<!-- DataTables -->
+<script src="{% static '/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static '/plugins/datatables/dataTables.bootstrap.min.js' %}"></script>
+<script src="{% static "plugins/json-view/jquery.jsonview.min.js" %}"></script>
+<script src="{% static "plugins/bootbox/bootbox.js" %}"></script>
+<script>
+var bf = 0;
+$(function () {
+    $('#userlist').DataTable();
+});
+
+function user_del(id, name) {
+    var dialog = bootbox.confirm({
+        title: '删除用户',
+        message: 'Are you sure to delete '+name+' ?',
+        buttons: {
+            confirm: {
+                label: '提交',
+                className: 'btn-danger'
+            },
+            cancel: {
+                label: '取消',
+                className: 'btn-success'
+            }
+        },
+        callback: function (result) {
+            if (result){
+                $.ajax({
+                    type: "DELETE",
+                    url: '{% url 'user-list' %}' + id + '/',
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+                        toastr["success"]("username "+name+" "+data.message);
+                        setTimeout(function () {
+                            location.reload();
+                        }, 2000);
+                    },
+                    failure: function (errMsg) {
+                        toastr["error"](errMsg);
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        toastr["error"]("username "+name+" "+JSON.parse(XMLHttpRequest.responseText).message);
+                    }
+                });
+            }
+        }
+    });
+}
+
+function user_edit(id, name) {
+    var dialog = bootbox.confirm({
+        title: '修改用户',
+        message: '<p><i class="fa fa-spin fa-spinner"></i> loading...</p>',
+        buttons: {
+            confirm: {
+                label: '提交',
+                className: 'btn-danger'
+            },
+            cancel: {
+                label: '取消',
+                className: 'btn-success'
+            }
+        },
+        callback: function (result) {
+            if (result){
+                if (bf.validate()) {
+                    var jsondata = bf.getData();
+                    if (jsondata.password === jsondata.password1 ) {
+                        if (jsondata.password === undefined && jsondata.password1 === undefined){
+                            jsondata.password = "None";
+                            jsondata.password1 = "None";
+                        }
+                        $.ajax({
+                            type: "PUT",
+                            url: '{% url 'user-list' %}' + id + '/?fields=username,name,email,is_active,password,is_superuser',
+                            data: JSON.stringify(jsondata, null, 4),
+                            dataType: "json",
+                            //contentType: "application/json; charset=utf-8",
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            success: function (data) {
+                                toastr["success"]("username "+name+" "+data.message);
+                                setTimeout(function () {
+                                    location.reload();
+                                },2000);
+                            },
+                            failure: function (errMsg) {
+                                toastr["error"](errMsg);
+                            },
+                            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                                toastr["error"]("username "+name+" "+JSON.parse(XMLHttpRequest.responseText).message);
+                            }
+                        });
+                    } else {
+                        toastr["error"]("输入的密码不一致，请重新更新用户信息。")
+                    }
+                }
+            }
+        }
+    });
+    dialog.init(function(){
+        var url = '{% url 'user-list' %}';
+        $.ajax({
+            url: url + id +'/?fields=username,name,email,is_active,is_superuser',
+            type: 'GET',
+            success: function(data, textStatus, jqXHR) {
+                var schema = {
+                    "type": "object",
+                    "properties": {
+                        "username": {
+                            "type": "string",
+                            'title': "用户名",
+                            "description": "用户名",
+                            "required": true,
+                            "maxLength": 140
+                        },
+                        "name": {
+                            "type": "string",
+                            "title": "姓名",
+                            "description": "姓名"
+                            },
+                        "password": {
+                            "type": "string",
+                            "format": "password",
+                            "title": "密码",
+                            "description": "为空表示不修改密码"
+                            },
+                        "password1": {
+                            "type": "string",
+                            "format": "password",
+                            "title": "确认密码",
+                            "description": "为空表示不修改密码"
+                            },
+                        "email": {
+                            "type": "string",
+                            "format": "email",
+                            "title": "邮箱",
+                            "description": "邮箱"
+                            },
+                        "is_active": {
+                            "type": "boolean",
+                            "title": "启用",
+                            "description": "启用",
+                            "default": true,
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "title": "启用"
+                                }
+                            },
+                            "required": [
+                                "enabled"
+                            ]
+                        },
+                        "is_superuser": {
+                            "type": "boolean",
+                            "title": "管理员",
+                            "description": "角色是否为管理员",
+                            "default": false,
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "title": "启用"
+                                }
+                            },
+                            "required": [
+                                "enabled"
+                            ]
+                        }
+                    }
+                    };
+                dialog.find('.bootbox-body').html("<div id='container'></div>");
+                var BrutusinForms = brutusin["json-forms"];
+                BrutusinForms.bootstrap.addFormatDecorator("password", "password");
+                BrutusinForms.bootstrap.addFormatDecorator("password1", "password");
+                BrutusinForms.bootstrap.addFormatDecorator("email", "email");
+                bf = BrutusinForms.create(schema);
+                var container = document.getElementById('container');
+                $("#container").append('<p><i class="fa fa-spin fa-spinner"></i> loading...</p>');
+                setTimeout(function () {
+                    $("#container").empty();
+                    bf.render(container, data);
+                },2000);
+
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.each(JSON.parse(XMLHttpRequest.responseText), function(key, value){
+                    $.each(value, function(index, value) {
+                        toastr["error"]("请检查错误 "+key + "错误"+ value);
+                    });
+                });
+            }
+        });
+    });
+}
+</script>
+{% endblock %}

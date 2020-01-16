@@ -1,0 +1,271 @@
+{%extends "base.html"%}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static '/plugins/datatables/dataTables.bootstrap.css' %}">
+{% endblock %}
+{% block content %}
+<!-- 远程调度日志模态框 -->
+<div class="modal fade" id="RemoteModal" tabindex="-1" role="dialog" aria-labelledby="RemoteModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="remote_goclose()">
+					&times;
+				</button>
+				<h4 class="modal-title" id="RemoteModalLabel">
+				</h4>
+			</div>
+			<div class="modal-body">
+                <pre id="remote-log" style="height: 800px;width: auto;background-color: #000000"></pre>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+<!-- 本地调度日志模态框 -->
+<div class="modal fade" id="LocalModal" tabindex="-1" role="dialog" aria-labelledby="LocalModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="local_goclose()">
+					&times;
+				</button>
+				<h4 class="modal-title" id="LocalModalLabel">
+				</h4>
+			</div>
+			<div class="modal-body">
+                <pre id="local-log" style="height: 800px;width: auto;background-color: #000000"></pre>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<div class="col-xs-12">
+    <div class="box">
+        <div class="box-body">
+            <table id="workers_list" class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Concurrency</th>
+                    <th>Queues</th>
+                    <th>Completed Tasks</th>
+                    <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="workers">
+                {%for item in response %}
+                    <tr>
+                    <td>{{item.name}}</td>
+                    <td>
+                    {%ifequal item.status 'Active'%}
+                        <small class="label label-success"><strong>Online</strong></small>
+                    {%else%}
+                        <small class="label label-danger"><strong>Offline</strong></small>
+                    {%endifequal%}
+                    </td>
+                    <td>{{ item.concurrency }}</td>
+                    <td>
+                        {% if item.queues %}
+                            {% for queue in item.queues %}
+                                {{ queue }}
+                                {% if not forloop.last %},
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}</td>
+                    <td>{{ item.complete }}</td>
+                    <td>
+                        <button type="button" onclick="on_worker_shutdown('{{ item.name }}')" class="btn btn-xs btn-danger">关闭</button>
+                        <button type="button" onclick="on_worker_restart('{{ item.name }}')" class="btn btn-xs btn-primary">重启</button>
+                        <button type="button" onclick="on_worker_ping('{{ item.name }}')" class="btn btn-xs btn-warning">ping</button>
+                        {% if item.queues %}
+                            {% if 'celery' in item.queues %}
+                                <button type="button" data-toggle="modal" data-target="#LocalModal" class="btn btn-xs btn-default" onclick="local_connect('{{ item.name }}')">日志</button>
+                            {% else %}
+                                <button type="button" data-toggle="modal" data-target="#RemoteModal" class="btn btn-xs btn-default" onclick="remote_connect('{{ item.name }}')">日志</button>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    </tr>
+                {%endfor%}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+    <!-- /.content -->
+{% endblock %}
+{% block js %}
+<script>
+  $('#page_header').text('工作节点');
+  $('#page_header_descript').text('worker node');
+</script>
+<script src="{% static '/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static '/plugins/datatables/dataTables.bootstrap.min.js' %}"></script>
+<script src="{% static "plugins/bootbox/bootbox.js" %}"></script>
+<script>
+//
+function remote_connect(host) {
+    var hostname = host.split('@')[1];
+    $('#RemoteModalLabel').append('正在实时查看'+hostname+'调度日志');
+    var protocol = "ws://";
+    if (window.location.protocol === 'https:') {
+    protocol = 'wss://';
+    }
+    var wsUrl = protocol + window.location.host + '/ws/remotelog/'+hostname+'/';
+    window.RemoteLogSocket = new WebSocket(wsUrl);
+
+    window.RemoteLogSocket.onopen = function (event) {
+    window.RemoteLogSocket.send(JSON.stringify({"INFO": "开始展示远程日志"}), null, 4)
+    };
+    window.RemoteLogSocket.onmessage = function(e) {
+    var data = JSON.parse(e.data);
+    var message = data['message'];
+    console.log(message);
+    $("#remote-log").append(message+'\n');
+    // 跳转到页面底部
+    $('#remote-log').scrollTop($('#remote-log')[0].scrollHeight);
+  };
+
+  window.RemoteLogSocket.onerror = function(e) {
+      toastr.error('服务端连接异常！')
+  };
+  window.RemoteLogSocket.onclose = function(e) {
+      toastr.error('websocket已关闭！')
+  };
+}
+
+function remote_goclose() {
+    window.RemoteLogSocket.close();
+    $('#remote-log').empty();
+    $('#RemoteModalLabel').empty();
+    window.RemoteLogSocket.onclose = function(e) {
+      toastr.success('已终止日志监听！')
+    };
+}
+</script>
+
+<script>
+function local_connect(host) {
+    var hostname = host.split('@')[1];
+    $('#LocalModalLabel').append('正在实时查看'+hostname+'调度日志');
+    var protocol = "ws://";
+    if (window.location.protocol === 'https:') {
+            protocol = 'wss://';
+    }
+    var wsUrl = protocol + window.location.host + '/ws/locallog/'+hostname+'/';
+    window.LocalLogSocket = new WebSocket(wsUrl);
+
+    window.LocalLogSocket.onopen = function (event) {
+    window.LocalLogSocket.send(JSON.stringify({"INFO": "开始展示本地日志"}), null, 4)
+    };
+    window.LocalLogSocket.onmessage = function(e) {
+    var data = JSON.parse(e.data);
+    var message = data['message'];
+    $("#local-log").append(message);
+    // 跳转到页面底部
+    $('#local-log').scrollTop($('#local-log')[0].scrollHeight);
+    };
+    window.LocalLogSocket.onerror = function(e) {
+      toastr.error('服务端连接异常！')
+    };
+
+    window.LocalLogSocket.onclose = function(e) {
+      toastr.error('websocket已关闭！')
+    };
+
+}
+
+function local_goclose() {
+    window.LocalLogSocket.close();
+    $('#local-log').empty();
+    $('#LocalModalLabel').empty();
+    window.LocalLogSocket.onclose = function(e) {
+      toastr.success('已终止日志监听！')
+    };
+}
+</script>
+
+<script>
+function on_worker_shutdown(destination){
+	var parameter = JSON.stringify({"destination":destination });
+	bootbox.confirm({
+	message: "Are you sure to shutdown the worker " + destination + " !",
+	buttons: {
+		confirm: {
+			label: 'Yes',
+			className: 'btn-danger'
+		},
+		cancel: {
+			label: 'Cancel',
+			className: 'btn-success'
+		}
+	},
+	callback: function (result) {
+		if (result === true){
+			$.get('{% url 'operations' %}',{"command":"shutdown","parameter":parameter}, function (ret) {
+			if (ret.status === 'success'){
+				toastr["success"](ret.message);
+			}else{
+				toastr["error"](ret.message);
+			}
+		}, 'json');
+		}
+	}
+	});
+};
+
+
+function on_worker_restart(destination){
+	var parameter = JSON.stringify({"destination":destination });
+	bootbox.confirm({
+	message: "Are you sure to restart the worker " + destination + " !",
+	buttons: {
+		confirm: {
+			label: 'Yes',
+			className: 'btn-danger'
+		},
+		cancel: {
+			label: 'Cancel',
+			className: 'btn-success'
+		}
+	},
+	callback: function (result) {
+		if (result === true){
+			$.get('{% url 'operations' %}',{"command":"restart","parameter":parameter}, function (ret) {
+			if (ret.status === 'success'){
+				toastr["success"](ret.message);
+			}else{
+				toastr["error"](ret.message);
+			}
+		}, 'json');
+		}
+	}
+	});
+};
+function on_worker_ping(destination){
+	var parameter = JSON.stringify({"destination":destination});
+	$.get('{% url 'operations' %}',{"command":"ping","parameter":parameter}, function (ret) {
+		if (ret.status === 'success'){
+			toastr["success"](ret.message);
+		}else{
+			toastr["error"](ret.message);
+		}
+	}, 'json');
+};
+</script>
+
+<script>
+  $(function () {
+	$('#workers_list').DataTable({
+	  "paging": true,
+      "lengthChange": false,
+      "searching": true,
+      "ordering": true,
+      "info": true,
+	  "iDisplayLength": 50,
+      "autoWidth": true
+	});
+  });
+</script>
+{% endblock %}

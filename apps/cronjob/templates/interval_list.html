@@ -1,0 +1,100 @@
+{%extends 'base.html'%}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static '/plugins/datatables/dataTables.bootstrap.css' %}">
+{% endblock %}
+{%block content%}
+<div class="col-sm-2">
+    <div class="form-group">
+        <a class="btn btn-success" onclick="window.location.href ='{% url 'interval_add' %}'">添加 <i class="fa fa-plus"></i></a>
+    </div>
+</div>
+
+
+<div class="col-xs-12">
+    <div class="box">
+        <div class="box-body">
+              <table id="interval_list" class="table table-hover table-striped">
+                <thead>
+                <tr>
+					<th>Period</th>
+                    <th>Every</th>
+					<th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+				{% for element in interval_list %}
+                <tr>
+				  <td>{{ element.every }}</td>
+                  <td>{{ element.period }}</td>
+                  <td data-editable="false">
+					<a class="btn btn-xs btn-info" href="{% url 'interval_update' element.id %}">编辑</a>
+					<a class="btn btn-xs btn-danger" onclick=interval_del({{ element.id }},'{{ element.every }}/{{ element.period }}')>删除</a>
+				 </td>
+                </tr>
+				{% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <!-- /.box-body -->
+    </div>
+</div>
+{%endblock%}
+{% block js %}
+<script>
+  $('#page_header').text('间隔列表');
+  $('#page_header_descript').text('Interval list');
+</script>
+<script src="{% static '/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static '/plugins/datatables/dataTables.bootstrap.min.js' %}"></script>
+<script src="{% static "plugins/bootbox/bootbox.js" %}"></script>
+<script>
+  $(function () {
+    $('#interval_list').DataTable();
+  });
+$(function () {
+       {% for message in messages %}
+           toastr['{{ message.tags }}']('{{ message|safe }}');
+       {% endfor %}
+});
+
+function interval_del(id, name) {
+    var dialog = bootbox.confirm({
+        title: '删除Interval间隔',
+        message: 'Are you sure to delete ' +name+ ' ?',
+        buttons: {
+            confirm: {
+                label: '提交',
+                className: 'btn-danger'
+            },
+            cancel: {
+                label: '取消',
+                className: 'btn-success'
+            }
+        },
+        callback: function (result) {
+            if (result){
+                $.ajax({
+                    type: "DELETE",
+                    url: "/interval/delete/"+id+"/",
+                    dataType: "json",
+                    //contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+                        toastr["success"]("Interval "+name+" "+data.message);
+                        setTimeout(function () {
+                            location.reload();
+                        },2000);
+                    },
+                    failure: function (errMsg) {
+                        toastr["error"](errMsg);
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        toastr["error"]("Interval "+name+" "+JSON.parse(XMLHttpRequest.responseText).message);
+                    }
+                });
+            }
+        }
+    });
+}
+</script>
+{%endblock%}

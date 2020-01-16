@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block css %}
+    <!-- DataTables -->
+    <link rel="stylesheet" href="{% static 'plugins/json-forms/css/brutusin-json-forms.css' %}">
+{% endblock %}
+{% block content %}
+
+<div class="col-md-12">
+    <!-- BEGIN EXAMPLE TABLE PORTLET-->
+    <div class="box box-success">
+        <div class="box-header with-border">
+            <div class="caption">
+                <button class="btn btn-primary" onclick="window.location.href = '{% url 'mail_list' %}'">
+                    返回
+                </button>
+            </div>
+
+            <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
+                        class="fa fa-minus"></i>
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-box-tool dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-wrench"></i></button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#">操作</a></li>
+                        <li><a href="#">另一个操作</a></li>
+                        <li><a href="#">其他</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Separated link</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="box-body">
+            <div class="row">
+                <div class="col-lg-10">
+                    <div class="content float-e-margins">
+                        <div class="content">
+                            <form class="form-horizontal nice-validator n-yellow form" id="table" method="post" novalidate="novalidate">
+                                {% csrf_token %}
+                                <div id='mail_container' class="table"></div>
+                                <div class="col-sm-4 col-sm-offset-5">
+                                    <button type="submit" id="submit" class="btn btn-primary pull-center">
+                                        保存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END EXAMPLE TABLE PORTLET-->
+</div>
+
+
+{% endblock %}
+{% block js %}
+<script>
+  $('#page_header').text('通知管理');
+  $('#page_header_descript').text('add mail');
+</script>
+    <!-- DataTables -->
+    <script src="{% static 'plugins/json-forms/js/brutusin-json-forms.js' %} "></script>
+    <script src="{% static 'plugins/json-forms/js/brutusin-json-forms-bootstrap.js' %} "></script>
+<script type="application/javascript">
+    var schema = {
+        "type": "object",
+        "properties": {
+            "mailname": {
+                "type": "string",
+                'title': "Mail Name",
+                "description": "Mail Name",
+                "required": true,
+                "maxLength": 140
+            },
+            "mailaddress": {
+                "type": "string",
+                "format":"text",
+                "title": "Mail Address",
+                "description": "邮件地址，多个邮件地址以英文逗号分隔",
+                "required": true
+                }
+            }
+        };
+
+var BrutusinForms = brutusin["json-forms"];
+var bf = BrutusinForms.create(schema);
+var container = document.getElementById('mail_container');
+bf.render(container, null);
+
+
+$("#submit").on('click', function (e) {
+    e.preventDefault();
+    var jsondata = bf.getData();
+    if (bf.validate()) {
+        $.ajax({
+            type: "POST",
+            url: "{% url 'mail-list' %}",
+            data: JSON.stringify(jsondata, null, 4),
+            dataType: "json",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            success: function (data) {
+                toastr["success"]("mailname "+data.mailname+" "+"create success!");
+                setTimeout(function () {
+                    window.location.href='{% url 'mail_list' %}';
+                },2000);
+            },
+            failure: function (errMsg) {
+                toastr["error"](errMsg);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.each(JSON.parse(XMLHttpRequest.responseText), function(key, value){
+                    $.each(value, function(index, value) {
+                        toastr["error"]("请检查错误 "+key + "错误"+ value);
+                    });
+                });
+            }
+        });
+    }
+});
+
+</script>
+{% endblock %}

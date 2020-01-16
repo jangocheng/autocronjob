@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'plugins/bootstrap-select/css/bootstrap-select.css' %} ">
+<link rel="stylesheet" href="{% static 'plugins/json-forms/css/brutusin-json-forms.css' %} ">
+<!-- DataTables css -->
+<link rel="stylesheet" href="{% static '/plugins/datatables/dataTables.bootstrap.css' %}">
+<link rel="stylesheet" href="{% static "plugins/json-view/jquery.jsonview.min.css" %}">
+{% endblock %}
+{% block content %}
+<div class="col-sm-2">
+    <div class="form-group">
+        <a class="btn btn-success" onclick="window.location.href = '{% url 'mail_add' %}'">添加 <i class="fa fa-plus"></i></a>
+    </div>
+</div>
+<div class="col-xs-12">
+  <div class="box">
+    <div class="box-body">
+      <table id="maillist" class="table table-bordered table-striped">
+        <thead>
+        <tr>
+          <th>Mail Name</th>
+          <th>Mail Address</th>
+          <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for mail in mail_info %}
+        <tr>
+          <td>{{ mail.mailname }}</td>
+          <td>{{ mail.mailaddress }}</td>
+          <td class="text-center pull-left">
+              <a class="btn btn-xs btn-info" onclick="return mail_edit({{ mail.id }})">编辑</a>
+              <a class="btn btn-xs btn-danger" onclick="return mail_del({{ mail.id }}, '{{ mail.mailname }}')">删除</a>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+  </div>
+  <!-- /.box -->
+</div>
+<!-- /.col -->
+{% endblock %}
+{% block js %}
+<script>
+  $('#page_header').text('通知管理');
+  $('#page_header_descript').text('mail list');
+</script>
+<script src="{% static 'plugins/markdown/markdown.js' %} "></script>
+<script src="{% static 'plugins/bootstrap-select/js/bootstrap-select.js' %} "></script>
+<script src="{% static 'plugins/json-forms/js/brutusin-json-forms.js' %} "></script>
+<script src="{% static 'plugins/json-forms/js/brutusin-json-forms-bootstrap.js' %} "></script>
+<!-- DataTables -->
+<script src="{% static '/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static '/plugins/datatables/dataTables.bootstrap.min.js' %}"></script>
+<script src="{% static "plugins/json-view/jquery.jsonview.min.js" %}"></script>
+<script src="{% static "plugins/bootbox/bootbox.js" %}"></script>
+<script>
+var bf = 0;
+$(function () {
+    $('#maillist').DataTable();
+});
+
+function mail_del(id, name) {
+    var dialog = bootbox.confirm({
+        title: '删除邮件地址',
+        message: 'Are you sure to delete '+name+' ?',
+        buttons: {
+            confirm: {
+                label: '提交',
+                className: 'btn-danger'
+            },
+            cancel: {
+                label: '取消',
+                className: 'btn-success'
+            }
+        },
+        callback: function (result) {
+            if (result){
+                $.ajax({
+                    type: "DELETE",
+                    url: '{% url 'mail-list' %}' + id + '/',
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+                        toastr["success"]("mailname "+name+" deleted success!");
+                        setTimeout(function () {
+                            location.reload();
+                        }, 2000);
+                    },
+                    failure: function (errMsg) {
+                        toastr["error"](errMsg);
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        $.each(JSON.parse(XMLHttpRequest.responseText), function(key, value){
+                            $.each(value, function(index, value) {
+                                toastr["error"]("请检查错误 "+key + "错误"+ value);
+                            });
+                        });
+                    }
+                });
+            }
+        }
+    });
+}
+
+function mail_edit(id) {
+    var dialog = bootbox.confirm({
+        title: '修改告警邮件地址',
+        message: '<p><i class="fa fa-spin fa-spinner"></i> loading...</p>',
+        buttons: {
+            confirm: {
+                label: '提交',
+                className: 'btn-danger'
+            },
+            cancel: {
+                label: '取消',
+                className: 'btn-success'
+            }
+        },
+        callback: function (result) {
+            if (result){
+                if (bf.validate()) {
+                    var jsondata = bf.getData();
+
+                    $.ajax({
+                        type: "PUT",
+                        url: '{% url 'mail-list' %}' + id + '/',
+                        data: JSON.stringify(jsondata, null, 4),
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        success: function (data) {
+                            toastr["success"]("mailname "+data.mailname+" updated success!");
+                            setTimeout(function () {
+                                location.reload();
+                            },2000);
+                        },
+                        failure: function (errMsg) {
+                            toastr["error"](errMsg);
+                        },
+                        error: function(XMLHttpRequest, textStatus, errorThrown) {
+                            $.each(JSON.parse(XMLHttpRequest.responseText), function(key, value){
+                                $.each(value, function(index, value) {
+                                    toastr["error"]("请检查错误 "+key + "错误"+ value);
+                                });
+                            });
+                        }
+                    });
+                }
+            }
+        }
+    });
+    dialog.init(function(){
+        var url = '{% url 'mail-list' %}';
+        $.ajax({
+            url: url + id,
+            type: 'GET',
+            success: function(data, textStatus, jqXHR) {
+                var schema = {
+                    "type": "object",
+                    "properties": {
+                        "mailname": {
+                            "type": "string",
+                            'title': "Mail Name",
+                            "description": "Mail Name",
+                            "required": true,
+                            "maxLength": 140
+                        },
+                        "mailaddress": {
+                            "type": "string",
+                            "format":"text",
+                            "title": "Mail Address",
+                            "description": "邮件地址，多个邮件地址以英文逗号分隔",
+                            "required": true
+                            }
+                        }
+                    };
+                dialog.find('.bootbox-body').html("<div id='container'></div>");
+                var BrutusinForms = brutusin["json-forms"];
+                bf = BrutusinForms.create(schema);
+                var container = document.getElementById('container');
+                $("#container").append('<p><i class="fa fa-spin fa-spinner"></i> loading...</p>');
+                setTimeout(function () {
+                    $("#container").empty();
+                    bf.render(container, data);
+                },2000);
+
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.each(JSON.parse(XMLHttpRequest.responseText), function(key, value){
+                    $.each(value, function(index, value) {
+                        toastr["error"]("请检查错误 "+key + "错误"+ value);
+                    });
+                });
+            }
+        });
+    });
+}
+</script>
+{% endblock %}

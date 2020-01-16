@@ -1,0 +1,246 @@
+{%extends "base.html"%}
+{% load static %}
+{%load dict_lookup%}
+{% block css %}
+    <link rel="stylesheet" href="{% static '/plugins/datatables/dataTables.bootstrap.css' %}">
+{% endblock %}
+{% block content %}
+<!-- Main content -->
+
+<!-- START CUSTOM TABS -->
+<section class="content">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Worker Node</h3>
+                    <div class="box-tools">
+                        <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
+                                class="fa fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body no-padding">
+                    <ul class="nav nav-pills nav-stacked">
+                      {% for item,value in stats.items%}
+                        {%if forloop.counter == 1%}
+                        <li class="active"><a href="#{{forloop.counter}}" data-toggle="tab">{{item}} Worker pool options</a></li>
+                        {%else%}
+                        <li class=""><a href="#{{forloop.counter}}" data-toggle="tab">{{item}} Worker pool options</a></li>
+                        {%endif%}
+                      {%endfor%}
+                    </ul>
+                </div>
+                <!-- /.box-body -->
+            </div>
+        </div>
+        <!-- /.col -->
+        <div class="col-md-9">
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Worker pool <small> setup work pool</small></h3>
+                </div>
+                <!-- /.box-header -->
+                <div class="box-body no-padding">
+                    <div class="table-responsive mailbox-messages">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="tab-content">
+<!-- /.tab-pane -->
+{% if stats.items %}
+{% for item,value in stats.items%}
+    {%now 'isu' as randomnum%}
+    {%if forloop.counter == 1%}
+    <div class="tab-pane active" id="{{forloop.counter}}">
+    {%else%}
+    <div class="tab-pane " id="{{forloop.counter}}">
+    {%endif%}
+    <div class="row">
+        <div class="col-md-6">
+            <section class="content-header">
+                <table class="table table-hover table-striped">
+                    <tbody>
+                    <tr>
+                    <td>Processes</td>
+                    <td>{%for process in value.pool.processes%}{{process}}, {%endfor%}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Max tasks per child</td>
+                    <td>{{value.pool|dictKeyLookup:"max-tasks-per-child"}}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Timeouts</td>
+                    <td>{% for timeout in value.pool.timeouts %}{{timeout}}, {%endfor%}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Writes</td>
+                    <td>{{value.pool.writes}}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Put guarded by semaphore</td>
+                    <td>{{ value.pool|dictKeyLookup:"put-guarded-by-semaphore" }}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Max concurrency</td>
+                    <td>{{ value.pool|dictKeyLookup:"max-concurrency"}}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Worker PID</td>
+                    <td>{{value.pid}}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+        <div class="col-md-6">
+        <div class="form-horizontal">
+            <fieldset>
+            <legend>Pool size control</legend>
+            <div class="control-group">
+            <label class="control-label" for="pool-size">Pool size</label>
+            <div class="controls">
+            <div class="input-append">
+            <select class="input-mini" id="pool-size{{randomnum}}{{forloop.counter}}">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            </select>
+            <button class="btn" type="button" onclick="on_pool_grow('{{item}}','pool-size{{randomnum}}{{forloop.counter}}')">Grow</button>
+            <button class="btn" type="button" onclick="on_pool_shrink('{{item}}','pool-size{{randomnum}}{{forloop.counter}}')">Shrink</button>
+            </div>
+            </div>
+            </div>
+            <div class="control-group">
+            <label class="control-label" for="min-autoscale">Min/Max autoscale</label>
+            <div class="controls">
+            <div class="input-append">
+            <input class="input-mini" id="min-autoscale{{randomnum}}{{forloop.counter}}" size="6" type="number">
+            <input class="input-mini" id="max-autoscale{{randomnum}}{{forloop.counter}}" size="6" type="number">
+            <button class="btn" type="button" onclick="on_pool_autoscale('{{item}}','min-autoscale{{randomnum}}{{forloop.counter}}','max-autoscale{{randomnum}}{{forloop.counter}}')">Apply</button>
+            </div>
+            </div>
+            </div>
+            </fieldset>
+            </div>
+        </div>
+    </div>
+    </div>
+    <!-- /.tab-pane -->
+{% endfor %}
+{% else %}
+    No active worker！
+{% endif %}
+</div>
+<!-- /.tab-content -->
+</div>
+                            </div>
+                            <!-- /.col -->
+                        </div>
+                    </div>
+                    <!-- /.mail-box-messages -->
+                </div>
+                <!-- /.box-body -->
+            </div>
+            <!-- /. box -->
+        </div>
+        <!-- /.col -->
+    </div>
+        <!-- /.row -->
+</section>
+<!-- /.row -->
+<!-- END CUSTOM TABS -->
+
+{% endblock %}
+{% block js %}
+<script>
+  $('#page_header').text('工作池配置');
+  $('#page_header_descript').text('worker pool configuration');
+</script>
+<script src="{% static '/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static '/plugins/datatables/dataTables.bootstrap.min.js' %}"></script>
+<script src="{% static "plugins/bootbox/bootbox.js" %}"></script>
+
+<script>
+function on_pool_grow(destination,elementid){
+	var grown_num = parseInt($('#' + elementid).find("option:selected").text());
+	var parameter = JSON.stringify({"destination":destination,"grown_num":grown_num});
+	bootbox.confirm({
+	message: "Are you sure to add " + grown_num + " pool on worker " + destination +" !",
+	buttons: {
+		confirm: {
+			label: 'Yes',
+			className: 'btn-danger'
+		},
+		cancel: {
+			label: 'Cancel',
+			className: 'btn-success'
+		}
+	},
+	callback: function (result) {
+		if (result === true){
+		$.get('{% url 'operations' %}',{"command":"poolgrow","parameter":parameter}, function (ret) {
+			if (ret.status === 'success'){
+				toastr["success"](ret.message);
+			}else{
+				toastr["error"](ret.message);
+			}
+		}, 'json');
+		}
+	}
+	});
+};
+function on_pool_shrink(destination,elementid){
+	var shrink_num = parseInt($('#' + elementid).find("option:selected").text());
+	var parameter = JSON.stringify({"destination":destination,"shrink_num":shrink_num});
+	bootbox.confirm({
+	message: "Are you sure to shrink the worker " + destination + "'s pool to" + shrink_num + " !",
+	buttons: {
+		confirm: {
+			label: 'Yes',
+			className: 'btn-danger'
+		},
+		cancel: {
+			label: 'Cancel',
+			className: 'btn-success'
+		}
+	},
+	callback: function (result) {
+		if (result === true){
+			$.get('{% url 'operations' %}',{"command":"poolshrink","parameter":parameter}, function (ret) {
+			if (ret.status === 'success'){
+				toastr["success"](ret.message);
+			}else{
+				toastr["error"](ret.message);
+			}
+		}, 'json');
+		}
+	}
+	});
+};
+function on_pool_autoscale(destination,minelementid,maxementid){
+	var min_num = parseInt($('#' + minelementid).val());
+	var max_num = parseInt($('#' + maxementid).val());
+	var z= /^[0-9]*$/;
+	if (z.test(min_num) && z.test(max_num)){
+	var parameter = JSON.stringify({"destination":destination,"min_num":min_num,"max_num":max_num});
+	  $.get('{% url 'operations' %}',{"command":"autoscale","parameter":parameter}, function (ret) {
+		  if (ret.status === 'success'){
+				toastr["success"](ret.message);
+		  }else{
+				toastr["error"](ret.message);
+		  }
+	  }, 'json');
+	}else{
+		toastr["error"]('Please input a valid number.');
+	}
+};
+</script>
+{% endblock %}

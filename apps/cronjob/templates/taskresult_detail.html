@@ -1,0 +1,223 @@
+{%extends 'base.html'%}
+{% load static %}
+{%load dict_lookup%}
+{% block css %}
+    <link rel="stylesheet" href="{% static "plugins/highlight/styles/googlecode.css" %}">
+    <style>
+    div .controls {
+        padding:8px 10px;
+    }
+    </style>
+{% endblock %}
+{%block content%}
+<div class="col-md-12">
+    <!-- BEGIN EXAMPLE TABLE PORTLET-->
+    <div class="box box-success">
+        <div class="box-header with-border">
+            <div class="caption">
+                <button class="btn btn-primary" onclick="window.location.href = '{% url 'taskresult_list' %}'">
+                    返回
+                </button>
+            </div>
+            <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
+                        class="fa fa-minus"></i>
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-box-tool dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-wrench"></i></button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#">操作</a></li>
+                        <li><a href="#">另一个操作</a></li>
+                        <li><a href="#">其他</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Separated link</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="box-body">
+            <div class="row">
+                <div class="col-lg-10">
+                    <div class="content float-e-margins">
+                        <div class="content">
+                            <form action="" class="form-horizontal nice-validator n-yellow" id=""  novalidate="novalidate">
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Task ID:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.task_id}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Task Name:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.task_name}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Task State:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.status}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Result Content Type:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.content_type}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Result Encoding:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.content_encoding}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Task Args:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.task_args}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Task Kwargs:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.task_kwargs}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Result:</label>
+                                        </div>
+                                        <div class="controls col-md-10">
+                                            {%if object.result%}
+                                                <p><pre><code class="python">{{object.result}}</code></pre></p>
+                                            {%else%}
+                                            <p>{{object.result}}</p>
+                                            {%endif%}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Completed DateTime:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                <p>{{object.date_done|date:"Y-m-d H:i:s"}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Traceback:</label>
+                                        </div>
+
+                                        <div class="controls col-md-10">
+                                                {%if object.traceback%}
+                                                <p><pre><code class="python">{{object.traceback}}</code></pre></p>
+                                                {%else%}
+                                                <p>{{object.traceback}}</p>
+                                                {%endif%}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="control-group">
+                                    <div class="col-md-12 form-group ">
+                                        <div class="control-label col-md-2">
+                                            <label>Task Meta information:</label>
+                                        </div>
+                                        <div class="controls col-md-10">
+                                                <p>{{ object.meta }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END EXAMPLE TABLE PORTLET-->
+</div>
+
+{%endblock%}
+{%block js%}
+<script>
+  $('#page_header').text('任务结果');
+  $('#page_header_descript').text('work result detail');
+</script>
+<script src="{% static "plugins/highlight/highlight.pack.js" %}"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+{%endblock%}

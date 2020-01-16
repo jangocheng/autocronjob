@@ -1,0 +1,67 @@
+{%extends 'base.html'%}
+{%load dict_lookup%}
+{% load bootstrap4 %}
+{%block content%}
+
+<div class="col-md-12">
+    <!-- BEGIN EXAMPLE TABLE PORTLET-->
+    <div class="box box-success">
+        <div class="box-header with-border">
+            <div class="caption">
+                <button class="btn btn-primary" onclick="window.location.href = '{% url 'interval_list' %}'">
+                    返回
+                </button>
+            </div>
+            <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
+                        class="fa fa-minus"></i>
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-box-tool dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-wrench"></i></button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#">操作</a></li>
+                        <li><a href="#">另一个操作</a></li>
+                        <li><a href="#">其他</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Separated link</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="box-body">
+
+            <div class="row">
+
+
+                <div class="col-lg-10">
+                    <div class="content float-e-margins">
+                        <div class="content">
+                            <form action="#" class="form-horizontal nice-validator n-yellow form" id="crontab_add" method="post" novalidate="novalidate">
+                                {% csrf_token %}
+                                {% bootstrap_form_errors form type='non_field_errors' %}
+                                {% bootstrap_field form.every layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.period layout='horizontal' show_help=Fasle %}
+                                <div class="col-sm-4 col-sm-offset-6">
+                                    <button type="submit" id="submit_button" class="btn btn-primary pull-center">保存</button>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END EXAMPLE TABLE PORTLET-->
+</div>
+
+{%endblock%}
+{% block js %}
+<script>
+  $('#page_header').text('间隔列表');
+  $('#page_header_descript').text('add interval');
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{%extends 'base.html'%}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static '/plugins/datatables/dataTables.bootstrap.css' %}">
+{% endblock %}
+{%block content%}
+<div class="col-sm-2">
+    <div class="form-group">
+        <a class="btn btn-success" onclick="window.location.href ='{% url 'crontab_add' %}'">添加 <i class="fa fa-plus"></i></a>
+    </div>
+</div>
+
+
+<div class="col-xs-12">
+    <div class="box">
+        <div class="box-body">
+              <table id="action_list" class="table table-hover table-striped">
+                <thead>
+                <tr>
+					<th>Minute</th>
+					<th>Hour</th>
+					<th>Day_of_month</th>
+					<th>Month_of_year</th>
+					<th>Day_of_week</th>
+					<th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+				{% for element in crontab_list %}
+                <tr>
+                  <td>{{ element.minute }}</td>
+				  <td>{{ element.hour }}</td>
+				  <td>{{ element.day_of_month }}</td>
+				  <td>{{ element.month_of_year }}</td>
+				  <td>{{ element.day_of_week }}</td>
+                  <td data-editable="false">
+					<a class="btn btn-xs btn-info" href="{% url 'crontab_update' element.id %}">编辑</a>
+					<a class="btn btn-xs btn-danger" onclick=crontab_del({{ element.id }},'{{ element.minute }}/{{ element.hour }}/{{ element.day_of_month }}/{{ element.month_of_year }}{{ element.day_of_week }}')>删除</a>
+				 </td>
+                </tr>
+				{% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <!-- /.box-body -->
+    </div>
+</div>
+{%endblock%}
+{% block js %}
+<script>
+  $('#page_header').text('定时列表');
+  $('#page_header_descript').text('crontab list');
+</script>
+<script src="{% static '/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static '/plugins/datatables/dataTables.bootstrap.min.js' %}"></script>
+<script src="{% static "plugins/bootbox/bootbox.js" %}"></script>
+<script>
+  $(function () {
+    $('#action_list').DataTable();
+  });
+$(function () {
+       {% for message in messages %}
+           toastr['{{ message.tags }}']('{{ message|safe }}');
+       {% endfor %}
+});
+function crontab_del(id, name) {
+    var dialog = bootbox.confirm({
+        title: '删除Crontab间隔',
+        message: 'Are you sure to delete '+name+' ?',
+        buttons: {
+            confirm: {
+                label: '提交',
+                className: 'btn-danger'
+            },
+            cancel: {
+                label: '取消',
+                className: 'btn-success'
+            }
+        },
+        callback: function (result) {
+            if (result){
+                $.ajax({
+                    type: "DELETE",
+                    url: "/crontab/delete/"+id+"/",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+                        toastr["success"]("Crontab "+name+" "+data.message);
+                        setTimeout(function () {
+                            location.reload();
+                        },2000);
+                    },
+                    failure: function (errMsg) {
+                        toastr["error"](errMsg);
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        toastr["error"]("Crontab "+name+" "+XMLHttpRequest.responseText.message);
+                    }
+                });
+            }
+        }
+    });
+}
+</script>
+{%endblock%}

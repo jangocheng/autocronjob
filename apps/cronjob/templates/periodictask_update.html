@@ -1,0 +1,141 @@
+{%extends 'base.html'%}
+{%load dict_lookup%}
+{% load bootstrap4 %}
+{% load static %}
+{% block css %}<!-- Date Picker -->
+  <link rel="stylesheet" href="{% static "plugins/datepicker/datepicker3.css" %}">
+  <!-- Daterange picker -->
+  <link rel="stylesheet" href="{% static "plugins/daterangepicker/daterangepicker.css" %}">
+{% endblock %}
+{%block content%}
+<div class="col-md-12">
+    <!-- BEGIN EXAMPLE TABLE PORTLET-->
+    <div class="box box-success">
+        <div class="box-header with-border">
+            <div class="caption">
+                <button class="btn btn-primary" onclick="window.location.href = '{% url 'periodictask_list' %}'">
+                    返回
+                </button>
+            </div>
+
+            <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
+                        class="fa fa-minus"></i>
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-box-tool dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-wrench"></i></button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#">操作</a></li>
+                        <li><a href="#">另一个操作</a></li>
+                        <li><a href="#">其他</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Separated link</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="box-body">
+            <div class="row">
+                <div class="col-lg-10">
+                    <div class="content float-e-margins">
+                        <div class="content">
+                            <form action="#" class="form-horizontal nice-validator n-yellow form" id="periodictask_add" method="post" novalidate="novalidate">
+                                {% csrf_token %}
+                                {% bootstrap_form_errors form type='non_field_errors' %}
+                                {% bootstrap_field form.name layout='horizontal' show_help=Fasle %}
+{#                                {% bootstrap_field form.regtask layout='horizontal'%}#}
+                                <div class="form-group row">
+                                    <label class="col-md-3 col-form-label" for="id_regtask">Task (registered)</label>
+                                    <div class="col-md-9">
+                                        <select name="regtask" class="form-control" title id="id_regtask">
+                                            <option value selected></option>
+                                            {% for app in regtasks|filter_tasks %}
+                                                <option value="{{ app }}">{{ app }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                {% bootstrap_field form.task layout='horizontal'%}
+                                {% bootstrap_field form.interval layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.crontab layout='horizontal' show_help=Fasle %}
+{#                                {% bootstrap_field form.args layout='horizontal' %}#}
+                                {% bootstrap_field form.kwargs layout='horizontal'%}
+                                <div class="form-group row">
+                                    <label class="col-md-3 col-form-label" for="id_queue">Queue Override</label>
+                                    <div class="col-md-9">
+                                        <select name="queue" class="form-control" title id="id_queue">
+                                            <option value selected></option>
+                                            {% for queue in queues %}
+                                                {% ifequal form.queue.value queue %}
+                                                <option selected value="{{ queue }}">{{ queue }}</option>
+                                                {% else %}
+                                                <option value="{{ queue }}">{{ queue }}</option>
+                                                {% endifequal %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                {% bootstrap_field form.mailaddress layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.webhookurl layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.expires layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.mail_monitor_enabled layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.webhook_monitor_enabled layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.enabled layout='horizontal' show_help=Fasle %}
+                                {% bootstrap_field form.description layout='horizontal' show_help=Fasle %}
+                                <div class="col-sm-4 col-sm-offset-6">
+                                    <button type="submit" id="submit_button" class="btn btn-primary pull-center">保存</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END EXAMPLE TABLE PORTLET-->
+</div>
+
+{%endblock%}
+{% block js %}
+<script>
+  $('#page_header').text('任务列表');
+  $('#page_header_descript').text('update job');
+</script>
+<script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/related-widget-wrapper.js' %}"></script>
+<!-- daterangepicker -->
+<script src="{% static "autocronjob/js/moment.min.js" %}"></script>
+<script src="{% static "plugins/daterangepicker/daterangepicker.js" %}"></script>
+<!-- datepicker -->
+<script src="{% static "plugins/datepicker/bootstrap-datepicker.js" %}"></script>
+<script type="text/javascript">
+      $(function () {
+      $('#{{form.expires.id_for_label}}').daterangepicker({
+      timePicker: true,
+      timePickerIncrement: 1,
+      format: 'YYYY-MM-DD HH:mm:ss',
+		timePickerSeconds:true,
+		autoApply:true,
+		singleDatePicker:true,
+		timePicker24Hour:true,
+		clearStatus:false,
+		autoUpdateInput: false,
+		locale: {
+			"format": 'YYYY-MM-DD HH:mm:ss'
+		}
+      });
+  		$('#{{form.expires.id_for_label}}').on('apply.daterangepicker', function(ev, picker) {
+			$(this).val(picker.startDate.format('YYYY-MM-DD HH:mm:ss'));
+		});
+  		$('#{{form.expires.id_for_label}}').on('cancel.daterangepicker', function(ev, picker) {
+      	$(this).val('');
+		});
+      });
+</script>
+{% endblock %}

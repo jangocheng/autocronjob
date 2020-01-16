@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="info-box">
+        <span class="info-box-icon bg-aqua"><i class="ion ion-ios-gear-outline"></i></span>
+
+        <div class="info-box-content">
+          <span class="info-box-text">任务数量</span>
+          <span class="info-box-number" id="id_task_total_num"></span>
+        </div>
+        <!-- /.info-box-content -->
+      </div>
+      <!-- /.info-box -->
+    </div>
+    <!-- /.col -->
+    <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="info-box">
+        <span class="info-box-icon bg-red"><i class="fa fa-google-plus"></i></span>
+        <div class="info-box-content">
+          <span class="info-box-text">停止任务数量</span>
+          <span class="info-box-number" id="id_task_stop_num"></span>
+        </div>
+        <!-- /.info-box-content -->
+      </div>
+      <!-- /.info-box -->
+    </div>
+    <!-- /.col -->
+    <!-- fix for small devices only -->
+    <div class="clearfix visible-sm-block"></div>
+    <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="info-box">
+        <span class="info-box-icon bg-green"><i class="ion ion-ios-cart-outline"></i></span>
+        <div class="info-box-content">
+          <span class="info-box-text">正在运行任务数量</span>
+          <span class="info-box-number" id="id_task_running_num"></span>
+        </div>
+        <!-- /.info-box-content -->
+      </div>
+      <!-- /.info-box -->
+    </div>
+    <!-- /.col -->
+    <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="info-box">
+        <span class="info-box-icon bg-yellow"><i class="ion ion-ios-people-outline"></i></span>
+
+        <div class="info-box-content">
+          <span class="info-box-text">调度器数量</span>
+          <span class="info-box-number" id="id_celerywork_num"></span>
+        </div>
+        <!-- /.info-box-content -->
+      </div>
+      <!-- /.info-box -->
+    </div>
+    <!-- /.row -->
+    <div class="col-md-12">
+      <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">一周内Task运行状态展示</h3>
+          <div class="box-tools pull-right">
+            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+            </button>
+            <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+          </div>
+        </div>
+        <!-- /.box-header -->
+    ﻿            <div class="box-body">
+          <div class="row">
+            <div class="col-md-6">
+                <div id="task_container"></div>
+            </div>
+            <div class="col-md-6">
+                <div id="queue_container"></div>
+            </div>
+          </div>
+          <!-- /.row -->
+        </div>
+      </div>
+      <!-- /.box -->
+    </div>
+    <div class="col-md-12">
+      <div class="box">
+        <div class="box-header with-border">
+          <h3 class="box-title">worker num list</h3>
+          <div class="box-tools pull-right">
+            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+            </button>
+            <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+          </div>
+        </div>
+        <div class="box-body">
+            <div class="row" id="id_worker_list"></div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
+{% block js %}
+<script src="{% static "plugins/highcharts/highcharts.js" %}"></script>
+<script src="{% static "plugins/highcharts/exporting.js" %}"></script>
+<script src="{% static "plugins/highcharts/series-label.js" %}"></script>
+<script src="{% static "plugins/highcharts/oldie.js" %}"></script>
+<script>
+  $('#page_header').text('DashBoard');
+  $('#page_header_descript').text('index');
+</script>
+<script>
+var chart = null;
+$.getJSON('{% url "taskexecutestate_api" %}', function (data) {
+    chart = Highcharts.chart('task_container', {
+	chart: {
+		type: 'line'
+	},
+	title: {
+		text: 'task执行状态周统计'
+	},
+	xAxis: {
+		categories: data.date_list
+	},
+	yAxis: {
+		title: {
+			text: 'COUNT'
+		}
+	},
+	tooltip: {
+		crosshairs: true,
+		shared: true
+	},
+	plotOptions: {
+		line: {
+			dataLabels: {
+				// 开启数据标签
+				enabled: true
+			},
+			// 关闭鼠标跟踪，对应的提示框、点击事件会失效
+			enableMouseTracking: true
+		}
+	},
+	series: [{
+		name: 'SUCCESS',
+		data: data.success_count_list
+	}, {
+		name: 'FAILURE',
+		data: data.failure_count_list
+	},
+        {
+	    name: '其他',
+        data: data.other_list
+    }
+    ]
+});
+    $.each(data.task_dict, function(key, value){
+        $('#id_worker_list').append('' +
+            '<div class="col-md-3 col-sm-6 col-xs-12">\n' +
+            '  <div class="info-box">\n' +
+            '    <div class="box box-danger">\n' +
+            '       <div class="box-header with-border">\n' +
+            '           <h3 class="box-title">'+key+'</h3>\n' +
+            '       </div>\n' +
+            '             <h1 style="text-align: center">'+value+'</h3>' +
+            '    </div>\n' +
+            '  </div>\n' +
+            '</div>')
+    });
+    $('#id_task_total_num').append('<h1 style="text-align: center"><a href="/periodictask/">'+data.task_total_num+'</a></h1>');
+    $('#id_task_stop_num').append('<h1 style="text-align: center">'+data.task_stop_num+'</h1>');
+    $('#id_task_running_num').append('<h1 style="text-align: center">'+data.task_running_num+'</h1>');
+    $('#id_celerywork_num').append('<h1 style="text-align: center"><a href="/workers/">'+data.celery_worker_num+'</a></h1>');
+
+// 创建渐变色
+Highcharts.getOptions().colors = Highcharts.map(Highcharts.getOptions().colors, function (color) {
+	return {
+		radialGradient: { cx: 0.5, cy: 0.3, r: 0.7 },
+		stops: [
+			[0, color],
+			[1, Highcharts.Color(color).brighten(-0.3).get('rgb')] // darken
+		]
+	};
+});
+
+// 构建图表
+Highcharts.chart('queue_container', {
+	chart: {
+		type: 'column'
+	},
+	title: {
+		text: 'worker 未消费任务数量'
+	},
+	xAxis: {
+		type: 'category'
+	},
+	yAxis: {
+		title: {
+			text: 'LLEN'
+		}
+	},
+	legend: {
+		enabled: false
+	},
+	plotOptions: {
+		series: {
+			borderWidth: 0,
+			dataLabels: {
+				enabled: true,
+				formatter: function() {
+					return Highcharts.numberFormat(this.y, 0, ',');
+				},
+				style: {
+					color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+				},
+				connectorColor: 'silver'
+			}
+		}
+	},
+	tooltip: {
+		headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+		pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}</b><br/>'
+	},
+	series: [{
+		name: '未消费任务数量',
+		colorByPoint: true,
+		data: data.queue_list
+	}]
+});
+
+})
+</script>
+
+{% endblock %}
