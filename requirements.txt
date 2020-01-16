@@ -14,7 +14,7 @@ django-crispy-forms==1.7.2
 django-guardian==1.5.1
 django-celery-results==1.1.0
 django-crispy-forms==1.7.2
-requests==2.19.1
+requests==2.20.0
 simplejson==3.16.0
 django-bootstrap4==0.0.8
 flower==0.9.3
