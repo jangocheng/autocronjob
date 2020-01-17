@@ -1,5 +1,6 @@
 # autocronjob
 # 欢迎大家随时提bug
+### 后面将提供docker方式部署
 
 ### 依赖
 
