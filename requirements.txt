@@ -27,3 +27,4 @@ drf-dynamic-fields==0.3.1
 configparser==3.7.4
 paramiko==2.6.0
 djangorestframework-jwt==1.11.0
+django-simple-history==2.8.0

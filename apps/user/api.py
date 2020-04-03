@@ -8,7 +8,6 @@ from rest_framework import mixins, status
 
 from user.models import UserProfile
 from user.serializers import UserProfileSerializer
-from utils.audit_record_decorator import user_operation_log_decorator
 
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
@@ -56,7 +55,6 @@ class UserProfileViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
-    @method_decorator(user_operation_log_decorator('添加用户'))
     def create(self, request, *args, **kwargs):
         try:
             super().create(request, *args, **kwargs)
@@ -66,7 +64,6 @@ class UserProfileViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,
         return JsonResponse({"status": True, "message": "create success!"},
                             status=status.HTTP_201_CREATED)
 
-    @method_decorator(user_operation_log_decorator('更新用户'))
     def update(self, request, *args, **kwargs):
         try:
             super().update(request, *args, **kwargs)
@@ -76,7 +73,6 @@ class UserProfileViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,
         return JsonResponse({"status": True, "message": "update success!"},
                             status=status.HTTP_200_OK)
 
-    @method_decorator(user_operation_log_decorator('删除用户'))
     def destroy(self, request, *args, **kwargs):
         try:
             super().destroy(request, *args, **kwargs)
@@ -85,4 +81,3 @@ class UserProfileViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,
                                 status=status.HTTP_403_FORBIDDEN)
         return JsonResponse({"status": True, "message": "deleted success!"},
                             status=status.HTTP_200_OK)
-

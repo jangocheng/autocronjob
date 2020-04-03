@@ -10,10 +10,16 @@ from django.urls import reverse
 from django.shortcuts import render as my_render
 from django.views.generic import TemplateView, ListView, View
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import HttpResponse
 from django.contrib import auth
 from .forms import LoginForm
+from .models import UserProfile
 from utils.admin_permission import superpermission
 from django.contrib.auth import get_user_model
+import json
+import datetime
+
 User = get_user_model()
 
 
@@ -84,3 +90,65 @@ class UserListView(LoginRequiredMixin, ListView):
 @method_decorator(superpermission, name='dispatch')
 class UserCreateView(LoginRequiredMixin, TemplateView):
     template_name = "user_create.html"
+
+
+class UserOpHistoryLog(LoginRequiredMixin, View):
+    """
+    非api 日志分页显示
+    """
+    def get(self, request):
+        start_time = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        return my_render(request, 'user_history_op_log.html', locals())
+
+    def post(self, request):
+        dataTable = {}
+        search_data = {}
+        aodata = json.loads(request.POST.get("aodata"))
+        for item in aodata:
+            if item['name'] == "sEcho":
+                sEcho = int(item['value'])  # 客户端发送的标识
+            if item['name'] == "iDisplayStart":
+                iDisplayStart = int(item['value'])  # 起始索引
+            if item['name'] == "iDisplayLength":
+                iDisplayLength = int(item['value'])  # 每页显示的行数
+            # if item['name'] == 'op_user':
+            #     search_data['op_user'] = item['value']
+            if item['name'] == "search_time":
+                search_data['history_date__range'] = item['value']
+        if search_data:
+            all_data_list = User.history.filter(**search_data).order_by('-history_date')
+        else:
+            all_data_list = User.history.all().order_by('-history_date')
+        resultLength = all_data_list.count()
+        # 对list进行分页
+        paginator = Paginator(all_data_list, iDisplayLength)
+        # 把数据分成10个一页。
+        try:
+            all_data_list = paginator.page(iDisplayStart / 10 + 1)
+        # 请求页数错误
+        except PageNotAnInteger:
+            all_data_list = paginator.page(1)
+        except EmptyPage:
+            all_data_list = paginator.page(paginator.num_pages)
+        data = []
+
+        # ope_type = {'~': 'update', '+': 'create', '-': 'delete'}
+        # new_record, old_record, *_ = all_data_list
+        # # print(User.history.all().count())
+        # delta = new_record.diff_against(old_record)
+        # for change in iter(delta.changes):
+        #     print("{} changed from {} to {}".format(change.field, change.old, change.new))
+        #     row = {"op_user": User.objects.get(id=new_record.history_user_id).username,
+        #            "op_msg": "{} changed from {} to {}".format(change.field, change.old, change.new),
+        #            "op_object": ope_type[new_record.history_type],
+        #            "op_time": new_record.history_date.strftime('%Y-%m-%d %H:%M:%S')}
+        #
+        #     data.append(row)
+        # 对最终的数据进行倒序排序
+        data = sorted(data, key=lambda item: item['op_time'], reverse=True)
+        dataTable['iTotalRecords'] = resultLength  # 数据总条数
+        dataTable['sEcho'] = sEcho + 1
+        dataTable['iTotalDisplayRecords'] = resultLength  # 显示的条数
+        dataTable['aaData'] = data
+        return HttpResponse(json.dumps(dataTable, ensure_ascii=False))

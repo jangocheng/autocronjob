@@ -3,3 +3,4 @@ apps/cronjob/migrations
 apps/user/migrations
 autocronjob/__init__.py
 apps/utils/django-celery-beat-master/django_celery_beat/migrations
+.idea/*

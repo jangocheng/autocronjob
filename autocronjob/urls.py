@@ -37,7 +37,7 @@ router.register(r'mail', MailAddressViewSet, base_name='mail')
 router.register(r'webhook', WebhookUrlViewSet, base_name='webhook')
 
 urlpatterns = [
-    # path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
     # 应用接口
     path('api/', include(router.urls)),
     # 非api接口

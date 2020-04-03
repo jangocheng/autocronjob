@@ -19,4 +19,3 @@ class UserProfileSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = '__all__'
-
