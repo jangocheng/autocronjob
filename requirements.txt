@@ -1,4 +1,4 @@
-django==2.2
+django==2.2.13
 kombu==4.6.3
 channels==2.1.7
 channels_redis==2.3.3
